@@ -1,0 +1,23 @@
+{
+  "name": "musicadmix-app",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "tauri": "tauri"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^1.4.0",
+    "mp3tag.js": "^3.4.0",
+    "vue": "^3.3.4",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.0/xlsx-0.20.0.tgz"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^1.4.0",
+    "@vitejs/plugin-vue": "^4.2.3",
+    "vite": "^4.4.4"
+  }
+}

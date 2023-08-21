@@ -1,0 +1,76 @@
+{
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build",
+    "devPath": "http://localhost:1420",
+    "distDir": "../dist",
+    "withGlobalTauri": false
+  },
+  "package": {
+    "productName": "musicadmix-app",
+    "version": "0.0.2"
+  },
+  "tauri": {
+    "allowlist": {
+      "all": false,
+      "os": {
+        "all": true
+      },
+      "http": {
+        "all": true,
+        "request": true,
+        "scope": ["https://**"]
+      },
+      "shell": {
+        "all": true
+      },
+      "path": {
+        "all": true
+      },
+      "fs": {
+        "all": true,
+        "scope": [
+          "$APPDATA/**",
+          "$APPDATA/*",
+          "$APPDATA/",
+          "$APPDATA",
+          "$DOCUMENT/**",
+          "$DOCUMENT/*",
+          "$DOCUMENT/",
+          "$DOCUMENT",
+          "$HOME/**",
+          "$HOME/*",
+          "$HOME/",
+          "$HOME"
+        ]
+      },
+      "dialog": {
+        "all": true
+      }
+    },
+    "bundle": {
+      "active": true,
+      "targets": "all",
+      "identifier": "com.tauri.dev",
+      "icon": [
+        "icons/32x32.png",
+        "icons/128x128.png",
+        "icons/128x128@2x.png",
+        "icons/icon.icns",
+        "icons/icon.ico"
+      ]
+    },
+    "security": {
+      "csp": null
+    },
+    "windows": [
+      {
+        "fullscreen": false,
+        "resizable": true,
+        "title": "Music Admix",
+        "width": 800,
+        "height": 600
+      }
+    ]
+  }
+}
