@@ -6,8 +6,8 @@ import { readBinaryFile, readDir } from '@tauri-apps/api/fs';
 import { computed, onMounted, ref, shallowRef, watch } from 'vue';
 import { read, utils } from 'XLSX';
 import MP3Tag from 'mp3tag.js';
-import { ID3Writer } from 'browser-id3-writer';
-import FileSaver from 'file-saver';
+// import { ID3Writer } from 'browser-id3-writer';
+// import FileSaver from 'file-saver';
 import Helpers from '../classes/Helpers.js';
 import {
   mp3TypeFilters,
@@ -15,7 +15,7 @@ import {
   STATUS_WAITING,
   STATUS_PROCESSING,
   STATUS_ERROR,
-  STATUS_DONE,
+  STATUS_SUCCESS,
 } from '../enums/mp3Tags.js';
 
 const testText = ref('');
@@ -25,13 +25,41 @@ const excelData = shallowRef([]);
 const platformName = ref(null);
 const mp3Files = ref([]);
 const loaderIsVisible = ref(false);
+const settingsIsVisible = ref(false);
 const checkAllMp3 = ref(true);
 const selectedMp3FileIndex = ref(null);
+
 const reportData = ref({
   unchecked: 0,
   success: 0,
   error: 0,
   notPaired: 0,
+});
+
+let xlsArtistColNrStorage = window.localStorage.getItem('xlsArtistColNr');
+if (!xlsArtistColNrStorage) {
+  xlsArtistColNrStorage = 1;
+}
+let xlsTitleColNrStorage = window.localStorage.getItem('xlsTitleColNr');
+if (!xlsTitleColNrStorage) {
+  xlsTitleColNrStorage = 2;
+}
+let xlsAlbumColNrStorage = window.localStorage.getItem('xlsAlbumColNr');
+if (!xlsAlbumColNrStorage) {
+  xlsAlbumColNrStorage = 3;
+}
+const xlsArtistColNr = ref(xlsArtistColNrStorage);
+const xlsTitleColNr = ref(xlsTitleColNrStorage);
+const xlsAlbumColNr = ref(xlsAlbumColNrStorage);
+
+watch(xlsArtistColNr, (newVal) => {
+  window.localStorage.setItem('xlsArtistColNr', newVal);
+});
+watch(xlsTitleColNr, (newVal) => {
+  window.localStorage.setItem('xlsTitleColNr', newVal);
+});
+watch(xlsAlbumColNr, (newVal) => {
+  window.localStorage.setItem('xlsAlbumColNr', newVal);
 });
 
 const mp3FilesHavePairs = computed(() => {
@@ -85,9 +113,9 @@ async function beginAutoPair() {
 
           for (let j = 0; j < excelData.value.length; j += 1) {
             if (j > 0) {
-              const xlsArtis = excelData.value[j][0];
-              const xlsTitle = excelData.value[j][1];
-              const xlsAlbum = excelData.value[j][2];
+              const xlsArtis = excelData.value[j][xlsAlbumColNr.value];
+              const xlsTitle = excelData.value[j][xlsTitleColNr.value];
+              const xlsAlbum = excelData.value[j][xlsAlbumColNr.value];
               // console.log(xlsArtis, xlsTitle, xlsAlbum);
               if (
                   Helpers.strEqual(xlsArtis, mp3tag.tags.artist)
@@ -144,7 +172,8 @@ async function changeMp3Tags() {
       writer.addTag();
       // const taggedSongBuffer = writer.arrayBuffer;
       const blob = writer.getBlob();
-      FileSaver.saveAs(blob, mp3FilePath);
+      // FileSaver.saveAs(blob, mp3FilePath);
+      FileSaver.save(blob, mp3FilePath);
       */
 
       const verbose = false;// true // Logs all processes using `console.log`
@@ -188,7 +217,7 @@ async function changeMp3Tags() {
           mp3Files.value[i].message = mp3tag.error;
           report.error += 1;
         } else {
-          mp3Files.value[i].status = STATUS_DONE;
+          mp3Files.value[i].status = STATUS_SUCCESS;
           report.success += 1;
         }
 
@@ -196,7 +225,6 @@ async function changeMp3Tags() {
         // mp3tag.read();
         // console.log('new buffer', mp3tag.tags);
       }
-
     }
   }
   loaderIsVisible.value = false;
@@ -426,28 +454,59 @@ onMounted(async () => {
 
 <template>
   <div style="display: flex; flex-direction: column;">
-    <div style="display: flex;align-items: center;font-size: 13px;margin: auto auto 10px;">
-<!--      <div style="padding: 6px;">-->
+    <div class="top-buttons">
+<!--      <div class="top-buttons__button-wrapper">-->
 <!--        <button @click="testFunction">Test mp3</button>-->
 <!--      </div>-->
-      <div style="padding: 6px;">
+      <div class="top-buttons__button-wrapper">
+        <img src="../assets/icons/settings.svg"
+             @click="settingsIsVisible = !settingsIsVisible"
+             style="height: 25px;cursor: pointer;"
+             alt=""/>
+      </div>
+      <div class="top-buttons__button-wrapper">
         <button @click="selectFolder">Select folders with mp3 files</button>
       </div>
-      <div>or</div>
-      <div style="padding: 6px;">
+      <div class="top-buttons__button-wrapper">or</div>
+      <div class="top-buttons__button-wrapper">
         <button @click="selectMp3Files">Select mp3 files</button>
       </div>
-      <div style="padding: 6px;">
+      <div class="top-buttons__button-wrapper">
         <button :disabled="!mp3Files.length" @click="selectXlsFile">Select xls file</button>
       </div>
-      <div style="padding: 6px;">
+      <div class="top-buttons__button-wrapper">
         <button :disabled="!mp3FilesHavePairs"
                 class="mp3-buttons__button_positive"
                 @click="changeMp3Tags">Start</button>
       </div>
-      <div style="padding: 6px;">
+      <div class="top-buttons__button-wrapper">
         <button :disabled="!mp3Files.length" @click="clearAll">Clear All</button>
       </div>
+    </div>
+
+    <div v-if="settingsIsVisible" class="settings">
+      <div style="color: #919191;">
+        * The first row of the XLS file must serve as the header;
+        It will not be parsed for pairing with songs.
+      </div>
+      <table>
+        <tr>
+          <td colspan="2" style="color: #919191;">
+            Please fill in the column numbers from the XLS file.
+            <br>
+            Column numbers start from 1.
+          </td>
+        </tr>
+        <tr>
+          <td>Artist:</td> <td><input v-model="xlsArtistColNr" type="number"></td>
+        </tr>
+        <tr>
+          <td>Title:</td> <td><input v-model="xlsTitleColNr" type="number"></td>
+        </tr>
+        <tr>
+          <td>Album:</td> <td><input v-model="xlsAlbumColNr" type="number"></td>
+        </tr>
+      </table>
     </div>
 
     <div class="loader-border" :class="loaderIsVisible ? '' : 'hidden'">

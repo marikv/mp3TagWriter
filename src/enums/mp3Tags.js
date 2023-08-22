@@ -7,11 +7,12 @@ export const xlsTypeFilters = [
     { name: "Flat OpenDocument Spreadsheet", extensions: ["fods"] },
     { name: "OpenDocument Spreadsheet", extensions: ["fods"] },
 ];
+
 export const mp3TypeFilters = [
     { name: "mp3", extensions: ["mp3"] },
 ];
 
 export const STATUS_WAITING = '';
 export const STATUS_PROCESSING = 'processing';
-export const STATUS_DONE = 'done';
+export const STATUS_SUCCESS = 'success';
 export const STATUS_ERROR = 'error';
