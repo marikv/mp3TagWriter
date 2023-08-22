@@ -5,8 +5,23 @@ export default class Helpers {
             .trim()
             .toLocaleLowerCase()
             .toLowerCase()
-            .replaceAll('  ', ' ')
-            .replaceAll('__', '_');
+            .replaceAll('feat. ', 'feat')
+            .replaceAll('ft. ', 'feat')
+            .replaceAll('&', '')
+            .replaceAll('Ø', 'o')
+            .replaceAll('#', '')
+            .replaceAll('(', '')
+            .replaceAll(')', '')
+            .replaceAll('%', '')
+            .replaceAll('\'', '')
+            .replaceAll('`', '')
+            .replaceAll('"', '')
+            .replaceAll('/', '')
+            .replaceAll(',', '')
+            .replaceAll('.', '')
+            .replaceAll(' ', '')
+            .replaceAll('-', '')
+            .replaceAll('_', '');
     }
 
     static strEqual(str1, str2) {
