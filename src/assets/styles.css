@@ -106,34 +106,34 @@ button {
   input,
   button {
     color: #ffffff;
-    background-color: #0f0f0f98;
+    background-color: #383838;
   }
   button:active {
-    background-color: #0f0f0f69;
+    background-color: #3f3f3f;
   }
 }
 
 .mp3-buttons__button {
   padding: 2px 5px;
 }
-.mp3-buttons__button_positive {
+.mp3-buttons__button_positive:not(:disabled) {
   background-color: #008c38 !important;
   color: #ffffff !important;
   border: 1px solid #008c38 !important;
 }
-.mp3-buttons__button_positive:hover,
-.mp3-buttons__button_positive:active {
+.mp3-buttons__button_positive:not(:disabled):hover,
+.mp3-buttons__button_positive:not(:disabled):active {
   background-color: #017e33 !important;
   color: #ffffff !important;
   border: 1px solid #017e33 !important;
 }
-.mp3-buttons__button_negative {
+.mp3-buttons__button_negative:not(:disabled) {
     background-color: #b92c3e !important;
     color: #ffffff!important;
   border: 1px solid #b92c3e !important;
 }
-.mp3-buttons__button_negative:hover,
-.mp3-buttons__button_negative:active {
+.mp3-buttons__button_negative:not(:disabled):hover,
+.mp3-buttons__button_negative:not(:disabled):active {
     background-color: #a82132 !important;
     color: #ffffff!important;
   border: 1px solid #b92c3e !important;

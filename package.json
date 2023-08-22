@@ -11,6 +11,8 @@
   },
   "dependencies": {
     "@tauri-apps/api": "^1.4.0",
+    "browser-id3-writer": "^6.0.0",
+    "file-saver": "^2.0.5",
     "mp3tag.js": "^3.4.0",
     "vue": "^3.3.4",
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.0/xlsx-0.20.0.tgz"

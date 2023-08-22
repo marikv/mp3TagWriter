@@ -3,9 +3,11 @@ import { open } from '@tauri-apps/api/dialog';
 import { audioDir, documentDir } from '@tauri-apps/api/path';
 import { platform } from '@tauri-apps/api/os';
 import { readBinaryFile, readDir } from '@tauri-apps/api/fs';
-import {computed, onMounted, ref, shallowRef, watch, watchEffect} from 'vue';
+import { computed, onMounted, ref, shallowRef, watch } from 'vue';
 import { read, utils } from 'XLSX';
 import MP3Tag from 'mp3tag.js';
+import { ID3Writer } from 'browser-id3-writer';
+import FileSaver from 'file-saver';
 import Helpers from '../classes/Helpers.js';
 import {
   mp3TypeFilters,
@@ -16,6 +18,7 @@ import {
   STATUS_DONE,
 } from '../enums/mp3Tags.js';
 
+const testText = ref('');
 const selectedExcelFile = ref('');
 const selectedMp3Folder = ref([]);
 const excelData = shallowRef([]);
@@ -80,7 +83,6 @@ async function beginAutoPair() {
           mp3Files.value[i].artist = mp3tag.tags.artist;
           // mp3Files.value[i].tags = { ...mp3tag.tags };
 
-          console.log(mp3tag.tags);
           for (let j = 0; j < excelData.value.length; j += 1) {
             if (j > 0) {
               const xlsArtis = excelData.value[j][0];
@@ -127,6 +129,24 @@ async function changeMp3Tags() {
       const uint8Array = await readBinaryFile(mp3FilePath);
       const buffer = typedArrayToBuffer(uint8Array);
 
+      /*
+      const writer = new ID3Writer(buffer);
+      writer
+          .setFrame('TIT2', 'Home1111111111111111')
+          // .setFrame('TPE1', ['Eminem', '50 Cent'])
+          // .setFrame('TALB', 'Friday Night Lights')
+          // .setFrame('TYER', 2004)
+          // .setFrame('TRCK', '6/8')
+          // .setFrame('TCON', ['Soundtrack'])
+          // .setFrame('TBPM', 128)
+          // .setFrame('WPAY', 'https://google.com')
+          // .setFrame('TKEY', 'Fbm');
+      writer.addTag();
+      // const taggedSongBuffer = writer.arrayBuffer;
+      const blob = writer.getBlob();
+      FileSaver.saveAs(blob, mp3FilePath);
+      */
+
       const verbose = false;// true // Logs all processes using `console.log`
       const mp3tag = new MP3Tag(buffer, verbose);
 
@@ -148,22 +168,35 @@ async function changeMp3Tags() {
         // mp3tag.tags.v2.EPVGENRE = excelData.value[excelRow][7].trim();
         // mp3tag.tags.v2.EPVPAYS = excelData.value[excelRow][8].trim();
         // mp3tag.tags.v2.EPVTEMPO = excelData.value[excelRow][9].trim();
-        mp3tag.tags.v2.EPV = {
-          EPOQUE: excelData.value[excelRow][6].trim(),
-          GENRE: excelData.value[excelRow][7].trim(),
-          PAYS: excelData.value[excelRow][8].trim(),
-          TEMPO: excelData.value[excelRow][9].trim(),
-        }
+        // mp3tag.tags.v2.EPV = {
+        //   EPOQUE: excelData.value[excelRow][6].trim(),
+        //   GENRE: excelData.value[excelRow][7].trim(),
+        //   PAYS: excelData.value[excelRow][8].trim(),
+        //   TEMPO: excelData.value[excelRow][9].trim(),
+        // };
+        // mp3tag.tags.v2.TYER = '2016';
 
         mp3tag.save({
-          strict: false, // Strict mode, validates all inputs against the standards. See id3.org
+          strict: true, // Strict mode, validates all inputs against the standards. See id3.org
           // ID3v2 Options
-          // id3v2: { padding: 4096 }
+          id3v2: { padding: 4096 }
         });
 
-        mp3Files.value[i].status = STATUS_DONE;
-        report.success += 1;
+        // There should be an error since newlines are not allowed in title
+        if (mp3tag.error !== '') {
+          mp3Files.value[i].status = STATUS_ERROR;
+          mp3Files.value[i].message = mp3tag.error;
+          report.error += 1;
+        } else {
+          mp3Files.value[i].status = STATUS_DONE;
+          report.success += 1;
+        }
+
+        // Read the new buffer again
+        // mp3tag.read();
+        // console.log('new buffer', mp3tag.tags);
       }
+
     }
   }
   loaderIsVisible.value = false;
@@ -314,10 +347,6 @@ function getFileNameFromFilePath(filePath) {
   return filePath.split('/').pop();
 }
 
-function openPairedXls(mp3FileIndex) {
-  selectedMp3FileIndex.value = mp3FileIndex;
-}
-
 function selectXlsFileIndexForMp3(excelRowNr) {
   if (mp3Files.value[selectedMp3FileIndex.value].excelRow === excelRowNr) {
     mp3Files.value[selectedMp3FileIndex.value].excelRow = null;
@@ -337,6 +366,53 @@ function clearAll() {
   window.location.reload();
 }
 
+async function testFunction() {
+  let defaultPath = window.localStorage.getItem('defaultPathMp3');
+  if (!defaultPath) {
+    defaultPath = await audioDir();
+  }
+  /* show open file dialog */
+  const selectedMp3Files = await open({
+    title: 'Select MP3 file',
+    multiple: false,
+    directory: false,
+    filters: mp3TypeFilters,
+    defaultPath,
+  });
+
+  testText.value = '';
+  if (selectedMp3Files) {
+    testText.value += selectedMp3Files + '<br>';
+    testText.value += `Please wait...<br>`;
+    const uint8Array = await readBinaryFile(selectedMp3Files);
+    const mp3tag = new MP3Tag(typedArrayToBuffer(uint8Array), false);
+    mp3tag.read({
+      id3v1: false
+    });
+    if (mp3tag.error !== '') {
+      testText.value += `Error reading tags: ${mp3tag.error}<br>`;
+    } else {
+      testText.value += `Reading TAGS: OK<br>`;
+      testText.value += `Set year to: 2019<br>`;
+      mp3tag.tags.v2.TYER = '2019';
+      mp3tag.save({
+        strict: true,
+        id3v2: { padding: 4096 }
+      });
+      if (mp3tag.error !== '') {
+        testText.value += `Error saving tags: ${mp3tag.error}<br>`;
+      } else {
+        testText.value += `mp3 file was saved<br>`;
+      }
+      testText.value += `Please wait...<br>`;
+      mp3tag.read();
+      testText.value += `New TAGS: ${mp3tag.tags}<br>`;
+
+      console.log('new buffer', mp3tag.tags);
+    }
+  }
+}
+
 watch(checkAllMp3, async (newValue) => {
   for (let i = 0; i < mp3Files.value.length; i += 1) {
     mp3Files.value[i].checked = newValue;
@@ -351,6 +427,9 @@ onMounted(async () => {
 <template>
   <div style="display: flex; flex-direction: column;">
     <div style="display: flex;align-items: center;font-size: 13px;margin: auto auto 10px;">
+<!--      <div style="padding: 6px;">-->
+<!--        <button @click="testFunction">Test mp3</button>-->
+<!--      </div>-->
       <div style="padding: 6px;">
         <button @click="selectFolder">Select folders with mp3 files</button>
       </div>
@@ -362,7 +441,9 @@ onMounted(async () => {
         <button :disabled="!mp3Files.length" @click="selectXlsFile">Select xls file</button>
       </div>
       <div style="padding: 6px;">
-        <button :disabled="!mp3FilesHavePairs" @click="changeMp3Tags">Start</button>
+        <button :disabled="!mp3FilesHavePairs"
+                class="mp3-buttons__button_positive"
+                @click="changeMp3Tags">Start</button>
       </div>
       <div style="padding: 6px;">
         <button :disabled="!mp3Files.length" @click="clearAll">Clear All</button>
@@ -377,10 +458,11 @@ onMounted(async () => {
     </div>
 
     <div class="report">
+      <div v-if="testText" v-html="testText"></div>
+      <div v-if="reportData.success" class="text-green">Success: {{reportData.success}}</div>
+      <div v-if="reportData.error" class="text-red">Error: {{reportData.error}}</div>
       <div v-if="reportData.unchecked" class="text-black">Unchecked: {{reportData.unchecked}}</div>
       <div v-if="reportData.notPaired" class="text-red">Not paired: {{reportData.notPaired}}</div>
-      <div v-if="reportData.error" class="text-red">Error: {{reportData.error}}</div>
-      <div v-if="reportData.success" class="text-green">Success: {{reportData.success}}</div>
     </div>
 
     <div class="mp3-rows" v-if="mp3Files.length">
@@ -390,9 +472,7 @@ onMounted(async () => {
           <input type="checkbox" v-model="checkAllMp3" />
         </div>
         <div v-if="excelData.length" class="mp3-buttons"></div>
-        <div>
-          <span>File name</span>
-        </div>
+        <div>File name</div>
       </div>
       <template v-for="(mp3FileData, mp3FileIndex) in mp3Files">
         <div class="mp3-row">
@@ -402,8 +482,8 @@ onMounted(async () => {
           </div>
           <div v-if="excelData.length" class="mp3-buttons">
             <button :class="`mp3-buttons__button mp3-buttons__button_${mp3Files[mp3FileIndex].excelRow ? 'positive' : 'negative'}`"
-                    @click="openPairedXls(mp3FileIndex)"
-                    >{{mp3Files[mp3FileIndex].excelRow ? `xls row: ${mp3Files[mp3FileIndex].excelRow}` : 'not found'}}</button>
+                    @click="selectedMp3FileIndex = mp3FileIndex"
+                    >{{(mp3Files[mp3FileIndex].excelRow ? `xls row: ${mp3Files[mp3FileIndex].excelRow}` : 'not found')}}</button>
           </div>
           <div>
             {{getFileNameFromFilePath(mp3FileData.path)}}
