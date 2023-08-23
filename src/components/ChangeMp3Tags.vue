@@ -4,7 +4,7 @@ import { audioDir, documentDir } from '@tauri-apps/api/path';
 import { platform } from '@tauri-apps/api/os';
 import { readBinaryFile, readDir } from '@tauri-apps/api/fs';
 import { computed, onMounted, ref, shallowRef, watch } from 'vue';
-import { read, utils } from 'XLSX';
+import { read, utils } from 'xlsx';
 import MP3Tag from 'mp3tag.js';
 // import { ID3Writer } from 'browser-id3-writer';
 
