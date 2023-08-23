@@ -185,13 +185,13 @@ button {
   color: #9d9d9d;
   font-size: 12px;
 }
-.mp3-result-processing {
+.mp3-result_processing {
   color: #002dc0;
 }
-.mp3-result-done {
+.mp3-result_success {
   color: #00c029;
 }
-.mp3-result-error {
+.mp3-result_error {
   color: #c90004;
 }
 
@@ -280,7 +280,7 @@ button {
   display: flex;
   align-items: center;
   font-size: 13px;
-  margin: auto auto 10px;
+  margin: auto auto;
 }
 .top-buttons__button-wrapper {
   padding: 6px;
@@ -295,5 +295,5 @@ button {
   padding: 7px 7px 20px 7px;
 }
 .settings input[type="number"]{
-  width: 60px;
+  width: 50px;
 }

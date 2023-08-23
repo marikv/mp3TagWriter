@@ -7,7 +7,7 @@ import { computed, onMounted, ref, shallowRef, watch } from 'vue';
 import { read, utils } from 'XLSX';
 import MP3Tag from 'mp3tag.js';
 // import { ID3Writer } from 'browser-id3-writer';
-// import FileSaver from 'file-saver';
+
 import Helpers from '../classes/Helpers.js';
 import {
   mp3TypeFilters,
@@ -39,27 +39,33 @@ const reportData = ref({
 let xlsArtistColNrStorage = window.localStorage.getItem('xlsArtistColNr');
 if (!xlsArtistColNrStorage) {
   xlsArtistColNrStorage = 1;
+} else {
+  xlsArtistColNrStorage = parseInt(xlsArtistColNrStorage, 10);
 }
 let xlsTitleColNrStorage = window.localStorage.getItem('xlsTitleColNr');
 if (!xlsTitleColNrStorage) {
   xlsTitleColNrStorage = 2;
+} else {
+  xlsTitleColNrStorage = parseInt(xlsTitleColNrStorage, 10);
 }
 let xlsAlbumColNrStorage = window.localStorage.getItem('xlsAlbumColNr');
 if (!xlsAlbumColNrStorage) {
   xlsAlbumColNrStorage = 3;
+} else {
+  xlsAlbumColNrStorage = parseInt(xlsAlbumColNrStorage, 10);
 }
 const xlsArtistColNr = ref(xlsArtistColNrStorage);
 const xlsTitleColNr = ref(xlsTitleColNrStorage);
 const xlsAlbumColNr = ref(xlsAlbumColNrStorage);
 
 watch(xlsArtistColNr, (newVal) => {
-  window.localStorage.setItem('xlsArtistColNr', newVal);
+  window.localStorage.setItem('xlsArtistColNr', String(newVal));
 });
 watch(xlsTitleColNr, (newVal) => {
-  window.localStorage.setItem('xlsTitleColNr', newVal);
+  window.localStorage.setItem('xlsTitleColNr', String(newVal));
 });
 watch(xlsAlbumColNr, (newVal) => {
-  window.localStorage.setItem('xlsAlbumColNr', newVal);
+  window.localStorage.setItem('xlsAlbumColNr', String(newVal));
 });
 
 const mp3FilesHavePairs = computed(() => {
@@ -79,12 +85,14 @@ function typedArrayToBuffer(array) {
 }
 
 async function beginAutoPair() {
+
   if (excelData.value.length && mp3Files.value.length) {
     setLoaderWidth(0, '');
     loaderIsVisible.value = true;
     for (let i = 0; i < mp3Files.value.length; i += 1) {
       const loaderWith = 100 * i / mp3Files.value.length;
-      setLoaderWidth(loaderWith, loaderWith.toFixed(2) + '%<br>Reading MP3 tags and searching for the corresponding row in the XLS file:<br>' + getFileNameFromFilePath(mp3Files.value[i].path));
+      setLoaderWidth(loaderWith, loaderWith.toFixed(2) + '% Please wait...<br>Reading MP3 tags and searching for the corresponding row in the XLS file:<br>' + getFileNameFromFilePath(mp3Files.value[i].path));
+
       if (mp3Files.value[i].checked) {
         /* read data into a Uint8Array */
         const uint8Array = await readBinaryFile(mp3Files.value[i].path);
@@ -113,9 +121,9 @@ async function beginAutoPair() {
 
           for (let j = 0; j < excelData.value.length; j += 1) {
             if (j > 0) {
-              const xlsArtis = excelData.value[j][xlsAlbumColNr.value];
-              const xlsTitle = excelData.value[j][xlsTitleColNr.value];
-              const xlsAlbum = excelData.value[j][xlsAlbumColNr.value];
+              const xlsArtis = excelData.value[j][xlsArtistColNr.value - 1];
+              const xlsTitle = excelData.value[j][xlsTitleColNr.value - 1];
+              const xlsAlbum = excelData.value[j][xlsAlbumColNr.value - 1];
               // console.log(xlsArtis, xlsTitle, xlsAlbum);
               if (
                   Helpers.strEqual(xlsArtis, mp3tag.tags.artist)
@@ -127,6 +135,10 @@ async function beginAutoPair() {
             }
           }
         }
+      }
+
+      if (mp3Files.value[i].excelRow === null) {
+        mp3Files.value[i].excelRow = 0; // 0 - show red button "not found"
       }
     }
     loaderIsVisible.value = false;
@@ -173,7 +185,7 @@ async function changeMp3Tags() {
       // const taggedSongBuffer = writer.arrayBuffer;
       const blob = writer.getBlob();
       // FileSaver.saveAs(blob, mp3FilePath);
-      FileSaver.save(blob, mp3FilePath);
+      // FileSaver.save(blob, mp3FilePath);
       */
 
       const verbose = false;// true // Logs all processes using `console.log`
@@ -249,13 +261,12 @@ async function selectXlsFile() {
   if (selectedExcelFile.value) {
     window.localStorage.setItem('defaultPathXls', selectedExcelFile.value);
     loaderIsVisible.value = true;
-    animateLoader(0, 80, 'Reading xls file...');
+    animateLoader(0, 80, 'Reading xls file...', 30);
     /* read data into a Uint8Array */
     const d = await readBinaryFile(selectedExcelFile.value);
-    animateLoader(80, 90, 'Reading binary xls file...');
+    animateLoader(80, 98, 'Parsing xls file...', 100);
     /* parse with SheetJS */
     const wb = await read(d);
-    setLoaderWidth(98, 'Parsing xls file...');
     /* get the first worksheet */
     const ws = wb.Sheets[wb.SheetNames[0]];
     /* get data from the first worksheet */
@@ -274,9 +285,9 @@ function setLoaderWidth(width, text = '') {
   document.querySelector('.loader-text').innerHTML = text;
 }
 
-function animateLoader(from = 0, to = 100, text = '') {
+function animateLoader(from = 0, to = 100, text = '', tout = 10) {
   let width = from;
-  const id = setInterval(frame, 10);
+  const id = setInterval(frame, tout);
   function frame() {
     if (width >= to) {
       clearInterval(id);
@@ -458,8 +469,14 @@ onMounted(async () => {
 <!--      <div class="top-buttons__button-wrapper">-->
 <!--        <button @click="testFunction">Test mp3</button>-->
 <!--      </div>-->
-      <div class="top-buttons__button-wrapper">
+      <div class="top-buttons__button-wrapper" :style="`${settingsIsVisible ? 'background: white;' : ''}`">
         <img src="../assets/icons/settings.svg"
+             v-if="!settingsIsVisible"
+             @click="settingsIsVisible = !settingsIsVisible"
+             style="height: 25px;cursor: pointer;"
+             alt=""/>
+        <img src="../assets/icons/close.svg"
+             v-else
              @click="settingsIsVisible = !settingsIsVisible"
              style="height: 25px;cursor: pointer;"
              alt=""/>
@@ -485,7 +502,7 @@ onMounted(async () => {
     </div>
 
     <div v-if="settingsIsVisible" class="settings">
-      <div style="color: #919191;">
+      <div style="color: #919191;font-size: 12px;">
         * The first row of the XLS file must serve as the header;
         It will not be parsed for pairing with songs.
       </div>
@@ -539,16 +556,28 @@ onMounted(async () => {
           <div class="mp3-checkbox">
             <input type="checkbox" v-model="mp3Files[mp3FileIndex].checked" />
           </div>
-          <div v-if="excelData.length" class="mp3-buttons">
+          <div v-if="excelData.length && mp3Files[mp3FileIndex].excelRow !== null" class="mp3-buttons">
             <button :class="`mp3-buttons__button mp3-buttons__button_${mp3Files[mp3FileIndex].excelRow ? 'positive' : 'negative'}`"
                     @click="selectedMp3FileIndex = mp3FileIndex"
                     >{{(mp3Files[mp3FileIndex].excelRow ? `xls row: ${mp3Files[mp3FileIndex].excelRow}` : 'not found')}}</button>
           </div>
           <div>
-            {{getFileNameFromFilePath(mp3FileData.path)}}
-            <span :class="`mp3-result mp3-result-${mp3FileData.status}`">
+            <div style="display: flex; align-items: center;">
+              <img src="../assets/icons/info.svg"
+                   v-if="mp3Files[mp3FileIndex].title || mp3Files[mp3FileIndex].album || mp3Files[mp3FileIndex].artist"
+                   @click="mp3Files[mp3FileIndex].info = !mp3Files[mp3FileIndex].info"
+                   style="height: 16px; cursor: pointer; margin: 0 10px 2px 0;"
+                   alt="View Info"/>
+              {{getFileNameFromFilePath(mp3FileData.path)}}
+            </div>
+            <div v-if="mp3Files[mp3FileIndex].info" class="mp3-result" style="line-height: 1.1;">
+              <div v-if="mp3Files[mp3FileIndex].title">Title: {{mp3Files[mp3FileIndex].title}}</div>
+              <div v-if="mp3Files[mp3FileIndex].album">Album: {{mp3Files[mp3FileIndex].album}}</div>
+              <div v-if="mp3Files[mp3FileIndex].artist">Artis: {{mp3Files[mp3FileIndex].artist}}</div>
+            </div>
+            <div :class="`mp3-result mp3-result_${mp3FileData.status}`">
               {{mp3FileData.status}} {{mp3FileData.message}}
-            </span>
+            </div>
           </div>
         </div>
       </template>
