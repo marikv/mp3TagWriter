@@ -84,11 +84,59 @@ function typedArrayToBuffer(array) {
   return array.buffer.slice(array.byteOffset, array.byteLength + array.byteOffset)
 }
 
-async function beginAutoPair() {
+async function beginAutoPairForUnpaired() {
+  // second chance
+  setLoaderWidth(98, 'Wait please...');
+  loaderIsVisible.value = true;
+  for (let i = 0; i < mp3Files.value.length; i += 1) {
+    if (mp3Files.value[i].checked
+        && !mp3Files.value[i].excelRow
+        && mp3Files.value[i].title
+        && mp3Files.value[i].album
+        && mp3Files.value[i].artist
+    ) {
+      const mp3Artist = mp3Files.value[i].artist;
+      const mp3Title = mp3Files.value[i].title;
+      const mp3Album = mp3Files.value[i].album;
+      for (let j = 0; j < excelData.value.length; j += 1) {
+        if (j > 0) {
+          const xlsArtist = excelData.value[j][xlsArtistColNr.value - 1];
+          const xlsTitle = excelData.value[j][xlsTitleColNr.value - 1];
+          const xlsAlbum = excelData.value[j][xlsAlbumColNr.value - 1];
+          // const eqArtist = Helpers.strEqual(xlsArtis, mp3Artist);
+          // const eqTitle = Helpers.strEqual(xlsTitle, mp3Title);
+          const eqAlbum = Helpers.strEqual(xlsAlbum, mp3Album);
+          const simpleArtistMp3 = Helpers.toLower(mp3Artist);
+          const simpleArtistXls = Helpers.toLower(xlsArtist);
+          // const simpleAlbumMp3 = Helpers.simpleStr(mp3Album);
+          // const simpleAlbumXls = Helpers.simpleStr(xlsAlbum);
+          const simpleTitleMp3 = Helpers.toLower(mp3Title);
+          const simpleTitleXls = Helpers.toLower(xlsTitle);
 
+          if (
+              (eqAlbum && simpleArtistMp3.indexOf(simpleArtistXls) > -1 && simpleTitleMp3.indexOf(simpleTitleXls) > -1)
+              ||
+              (eqAlbum && simpleArtistMp3.indexOf(simpleArtistXls) > -1 && simpleTitleXls.indexOf(simpleTitleMp3) > -1)
+              ||
+              (eqAlbum && simpleArtistMp3.indexOf(simpleArtistXls) > -1 && Helpers.calculateCosineSimilarity(simpleTitleMp3, simpleTitleXls) > 75)
+              ||
+              (eqAlbum && Helpers.calculateCosineSimilarity(simpleArtistMp3, simpleArtistXls) > 70 && Helpers.calculateCosineSimilarity(simpleTitleMp3, simpleTitleXls) > 70)
+          ) {
+            mp3Files.value[i].excelRow = j;
+          }
+        }
+      }
+    }
+  }
+  setLoaderWidth(0, '');
+  loaderIsVisible.value = false;
+}
+
+async function beginAutoPair() {
   if (excelData.value.length && mp3Files.value.length) {
     setLoaderWidth(0, '');
     loaderIsVisible.value = true;
+    let unpairedExists = false;
     for (let i = 0; i < mp3Files.value.length; i += 1) {
       const loaderWith = 100 * i / mp3Files.value.length;
       setLoaderWidth(loaderWith, loaderWith.toFixed(2) + '% Please wait...<br>Reading MP3 tags and searching for the corresponding row in the XLS file:<br>' + getFileNameFromFilePath(mp3Files.value[i].path));
@@ -124,11 +172,25 @@ async function beginAutoPair() {
               const xlsArtis = excelData.value[j][xlsArtistColNr.value - 1];
               const xlsTitle = excelData.value[j][xlsTitleColNr.value - 1];
               const xlsAlbum = excelData.value[j][xlsAlbumColNr.value - 1];
-              // console.log(xlsArtis, xlsTitle, xlsAlbum);
-              if (
-                  Helpers.strEqual(xlsArtis, mp3tag.tags.artist)
-                  && Helpers.strEqual(xlsTitle, mp3tag.tags.title)
-                  && Helpers.strEqual(xlsAlbum, mp3tag.tags.album)
+
+              const eqArtist = Helpers.strEqual(xlsArtis, mp3tag.tags.artist);
+              const eqTitle = Helpers.strEqual(xlsTitle, mp3tag.tags.title);
+              const eqAlbum = Helpers.strEqual(xlsAlbum, mp3tag.tags.album);
+              const simpleArtistMp3 = Helpers.simpleStr(mp3tag.tags.artist);
+              const simpleArtistXls = Helpers.simpleStr(xlsArtis);
+              const simpleAlbumMp3 = Helpers.simpleStr(mp3tag.tags.album);
+              const simpleAlbumXls = Helpers.simpleStr(xlsAlbum);
+              const simpleTitleMp3 = Helpers.simpleStr(mp3tag.tags.title);
+              const simpleTitleXls = Helpers.simpleStr(xlsTitle);
+              if ((eqArtist && eqTitle && eqAlbum)
+                  ||
+                  (eqTitle && eqAlbum && simpleArtistMp3.indexOf(simpleArtistXls) > -1)
+                  ||
+                  (eqTitle && eqAlbum && simpleArtistXls.indexOf(simpleArtistMp3) > -1)
+                  ||
+                  (eqAlbum && simpleArtistMp3.indexOf(simpleArtistXls) > -1 && simpleTitleMp3.indexOf(simpleTitleXls) > -1)
+                  ||
+                  (eqAlbum && simpleArtistMp3.indexOf(simpleArtistXls) > -1 && simpleTitleXls.indexOf(simpleTitleMp3) > -1)
               ) {
                 mp3Files.value[i].excelRow = j;
               }
@@ -138,10 +200,14 @@ async function beginAutoPair() {
       }
 
       if (mp3Files.value[i].excelRow === null) {
+        unpairedExists = true;
         mp3Files.value[i].excelRow = 0; // 0 - show red button "not found"
       }
     }
     loaderIsVisible.value = false;
+    if (unpairedExists) {
+      await beginAutoPairForUnpaired();
+    }
   }
 }
 
@@ -205,17 +271,14 @@ async function changeMp3Tags() {
         // Access ID3v2 Tags
         // Comment Tag. See more ID3v2 tags at id3.org
         const excelRow = mp3Files.value[i].excelRow;
-        // mp3tag.tags.v2.EPVEPOQUE = excelData.value[excelRow][6].trim();
-        // mp3tag.tags.v2.EPVGENRE = excelData.value[excelRow][7].trim();
-        // mp3tag.tags.v2.EPVPAYS = excelData.value[excelRow][8].trim();
-        // mp3tag.tags.v2.EPVTEMPO = excelData.value[excelRow][9].trim();
-        // mp3tag.tags.v2.EPV = {
-        //   EPOQUE: excelData.value[excelRow][6].trim(),
-        //   GENRE: excelData.value[excelRow][7].trim(),
-        //   PAYS: excelData.value[excelRow][8].trim(),
-        //   TEMPO: excelData.value[excelRow][9].trim(),
-        // };
-        // mp3tag.tags.v2.TYER = '2016';
+
+        mp3tag.tags.v2.TXXX = [];
+        for (let ii = 0; ii < excelData.value[excelRow].length; ii += 1) {
+          mp3tag.tags.v2.TXXX.push({
+            description: String(excelData.value[0][ii].trim()),
+            text: String(excelData.value[excelRow][ii].trim())
+          })
+        }
 
         mp3tag.save({
           strict: true, // Strict mode, validates all inputs against the standards. See id3.org
@@ -432,12 +495,12 @@ async function testFunction() {
       testText.value += `Error reading tags: ${mp3tag.error}<br>`;
     } else {
       testText.value += `Reading TAGS: OK<br>`;
-      testText.value += `Set year to: 2019<br>`;
-      mp3tag.tags.v2.TYER = '2019';
-      mp3tag.save({
-        strict: true,
-        id3v2: { padding: 4096 }
-      });
+      // testText.value += `Set year to: 2019<br>`;
+      // mp3tag.tags.v2.TYER = '2019';
+      // mp3tag.save({
+      //   strict: true,
+      //   id3v2: { padding: 4096 }
+      // });
       if (mp3tag.error !== '') {
         testText.value += `Error saving tags: ${mp3tag.error}<br>`;
       } else {
@@ -466,9 +529,9 @@ onMounted(async () => {
 <template>
   <div style="display: flex; flex-direction: column;">
     <div class="top-buttons">
-<!--      <div class="top-buttons__button-wrapper">-->
-<!--        <button @click="testFunction">Test mp3</button>-->
-<!--      </div>-->
+      <div class="top-buttons__button-wrapper">
+        <button @click="testFunction">Test mp3</button>
+      </div>
       <div class="top-buttons__button-wrapper" :style="`${settingsIsVisible ? 'background: white;' : ''}`">
         <img src="../assets/icons/settings.svg"
              v-if="!settingsIsVisible"

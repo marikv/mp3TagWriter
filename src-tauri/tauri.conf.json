@@ -8,7 +8,7 @@
   },
   "package": {
     "productName": "musicadmix-app",
-    "version": "0.0.2"
+    "version": "0.1.1"
   },
   "tauri": {
     "allowlist": {
@@ -41,7 +41,8 @@
           "$HOME/**",
           "$HOME/*",
           "$HOME/",
-          "$HOME"
+          "$HOME",
+          "**"
         ]
       },
       "dialog": {
@@ -67,7 +68,7 @@
       {
         "fullscreen": false,
         "resizable": true,
-        "title": "Music Admix",
+        "title": "Music Admix TAG writer",
         "width": 800,
         "height": 600
       }
