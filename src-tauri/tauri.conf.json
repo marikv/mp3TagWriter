@@ -7,7 +7,7 @@
     "withGlobalTauri": false
   },
   "package": {
-    "productName": "musicadmix-app",
+    "productName": "Music Admix Tag Writer",
     "version": "0.1.1"
   },
   "tauri": {
@@ -52,7 +52,7 @@
     "bundle": {
       "active": true,
       "targets": "all",
-      "identifier": "com.mp3-tag-writer.build",
+      "identifier": "com.music-admix-tag-writer.build",
       "icon": [
         "icons/32x32.png",
         "icons/128x128.png",
@@ -68,7 +68,7 @@
       {
         "fullscreen": false,
         "resizable": true,
-        "title": "Music Admix TAG writer",
+        "title": "Music Admix Tag Writer",
         "width": 850,
         "height": 700
       }
