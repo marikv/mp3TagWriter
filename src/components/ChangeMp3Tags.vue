@@ -46,6 +46,17 @@ const reportData = ref({
   notPaired: 0,
 });
 
+let saveOriginalFileStorage = window.localStorage.getItem('saveOriginalFile');
+if (!saveOriginalFileStorage) {
+  saveOriginalFileStorage = false;
+} else {
+  saveOriginalFileStorage = parseInt(saveOriginalFileStorage, 10) === 1;
+}
+const saveOriginalFile = ref(saveOriginalFileStorage);
+watch(saveOriginalFile, (newVal) => {
+  window.localStorage.setItem('saveOriginalFile', newVal ? '1' : '0');
+});
+
 let xlsArtistColNrStorage = window.localStorage.getItem('xlsArtistColNr');
 if (!xlsArtistColNrStorage) {
   xlsArtistColNrStorage = 1;
@@ -286,12 +297,10 @@ async function changeMp3Tags() {
 
         mp3tag.tags.v2.TXXX = [];
         for (let ii = 0; ii < excelData.value[excelRow].length; ii += 1) {
-          if (ii > 2) {
-            mp3tag.tags.v2.TXXX.push({
-              description: String(excelData.value[0][ii].trim()),
-              text: String(excelData.value[excelRow][ii].trim())
-            });
-          }
+          mp3tag.tags.v2.TXXX.push({
+            description: String(excelData.value[0][ii].trim()),
+            text: String(excelData.value[excelRow][ii].trim())
+          });
         }
         // console.log('mp3tag.tags.v2.TXXX', mp3tag.tags.v2.TXXX);
 
@@ -300,16 +309,6 @@ async function changeMp3Tags() {
           // ID3v2 Options
           id3v2: { padding: 4096 }
         });
-
-        // Write a binary file to the `$APPDATA/avatar.png` path
-
-        await writeBinaryFile({
-          path: fileName,
-          contents: new Uint8Array(arrayBuffer)
-        }, {
-          dir: BaseDirectory.Desktop
-        });
-
 
         // There should be an error since newlines are not allowed in title
         if (mp3tag.error !== '') {
@@ -320,6 +319,18 @@ async function changeMp3Tags() {
           mp3Files.value[i].status = STATUS_SUCCESS;
           report.success += 1;
         }
+
+        // Write a binary file to the `$APPDATA/avatar.png` path
+        /*
+        await writeBinaryFile({
+          path: fileName.replace('.mp3', '_TAGGED.mp3'),
+          contents: new Uint8Array(arrayBuffer)
+        }, {
+          dir: BaseDirectory.Desktop
+        });
+         */
+        const savePath = saveOriginalFile.value ? mp3FilePath.replace('.mp3', '_TAGGED.mp3') : mp3FilePath;
+        await writeBinaryFile(savePath, new Uint8Array(arrayBuffer));
 
         // Read the new buffer again
         // mp3tag.read();
@@ -349,7 +360,7 @@ async function selectXlsFile() {
   if (selectedExcelFile.value) {
     window.localStorage.setItem('defaultPathXls', selectedExcelFile.value);
     loaderIsVisible.value = true;
-    animateLoader(0, 80, 'Reading xls file...', 30);
+    animateLoader(0, 80, 'Reading xls file...', 10);
     /* read data into a Uint8Array */
     const d = await readBinaryFile(selectedExcelFile.value);
     animateLoader(80, 98, 'Parsing xls file...', 100);
@@ -468,10 +479,23 @@ async function selectMp3Files() {
 }
 
 function getFileNameFromFilePath(filePath) {
+  let DS = '/';
   if (platformName.value === 'win32') {
-    return filePath.split('\\').pop();
+    DS = '\\';
   }
-  return filePath.split('/').pop();
+
+  return filePath.split(DS).pop();
+}
+
+function getDirectoryFromFilePath(filePath) {
+  let DS = '/';
+  if (platformName.value === 'win32') {
+    DS = '\\';
+  }
+
+  let arr = filePath.split(DS);
+  arr.pop();
+  return arr.join(DS);
 }
 
 function selectXlsFileIndexForMp3(excelRowNr) {
@@ -604,6 +628,12 @@ onMounted(async () => {
           <td>Album:</td> <td><input v-model="xlsAlbumColNr" type="number"></td>
         </tr>
       </table>
+      <div style="color: #3b3b3b;font-size: 13px;margin-top: 15px;">
+        <label>
+          <input type="checkbox" v-model="saveOriginalFile"/>
+          Save the original file; the tagged file will be saved with the "_TAGGED" suffix
+        </label>
+      </div>
     </div>
 
     <div class="loader-border" :class="loaderIsVisible ? '' : 'hidden'">
