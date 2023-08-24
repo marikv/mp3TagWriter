@@ -2,8 +2,18 @@
 import { open } from '@tauri-apps/api/dialog';
 import { audioDir, documentDir } from '@tauri-apps/api/path';
 import { platform } from '@tauri-apps/api/os';
-import { readBinaryFile, readDir } from '@tauri-apps/api/fs';
-import { computed, onMounted, ref, shallowRef, watch } from 'vue';
+import { BaseDirectory,
+  readBinaryFile,
+  readDir,
+  writeBinaryFile,
+} from '@tauri-apps/api/fs';
+import {
+  computed,
+  onMounted,
+  ref,
+  shallowRef,
+  watch,
+} from 'vue';
 import { read, utils } from 'xlsx';
 import MP3Tag from 'mp3tag.js';
 // import { ID3Writer } from 'browser-id3-writer';
@@ -224,7 +234,8 @@ async function changeMp3Tags() {
   for (let i = 0; i < mp3Files.value.length; i++) {
     const mp3FilePath = mp3Files.value[i].path;
     let prc = 100 * i / mp3Files.value.length;
-    setLoaderWidth(prc, `${prc.toFixed(2)}% - ${getFileNameFromFilePath(mp3FilePath)}`);
+    const fileName = getFileNameFromFilePath(mp3FilePath);
+    setLoaderWidth(prc, `${prc.toFixed(2)}% - ${fileName}`);
     if (!mp3Files.value[i].checked) {
       report.unchecked += 1;
     } else if (!mp3Files.value[i].excelRow) {
@@ -261,6 +272,7 @@ async function changeMp3Tags() {
       mp3tag.read({
         id3v1: false // Ignore ID3v1 tags when reading
       });
+      // console.log('old buffer  TXXX', mp3tag.tags.v2.TXXX);
 
       // Handle error if there's any
       if (mp3tag.error !== '') {
@@ -274,17 +286,30 @@ async function changeMp3Tags() {
 
         mp3tag.tags.v2.TXXX = [];
         for (let ii = 0; ii < excelData.value[excelRow].length; ii += 1) {
-          mp3tag.tags.v2.TXXX.push({
-            description: String(excelData.value[0][ii].trim()),
-            text: String(excelData.value[excelRow][ii].trim())
-          })
+          if (ii > 2) {
+            mp3tag.tags.v2.TXXX.push({
+              description: String(excelData.value[0][ii].trim()),
+              text: String(excelData.value[excelRow][ii].trim())
+            });
+          }
         }
+        // console.log('mp3tag.tags.v2.TXXX', mp3tag.tags.v2.TXXX);
 
-        mp3tag.save({
+        const arrayBuffer = mp3tag.save({
           strict: true, // Strict mode, validates all inputs against the standards. See id3.org
           // ID3v2 Options
           id3v2: { padding: 4096 }
         });
+
+        // Write a binary file to the `$APPDATA/avatar.png` path
+
+        await writeBinaryFile({
+          path: fileName,
+          contents: new Uint8Array(arrayBuffer)
+        }, {
+          dir: BaseDirectory.Desktop
+        });
+
 
         // There should be an error since newlines are not allowed in title
         if (mp3tag.error !== '') {
@@ -298,7 +323,7 @@ async function changeMp3Tags() {
 
         // Read the new buffer again
         // mp3tag.read();
-        // console.log('new buffer', mp3tag.tags);
+        // console.log('new buffer TXXX', mp3tag.tags.v2.TXXX);
       }
     }
   }
@@ -495,22 +520,14 @@ async function testFunction() {
       testText.value += `Error reading tags: ${mp3tag.error}<br>`;
     } else {
       testText.value += `Reading TAGS: OK<br>`;
-      // testText.value += `Set year to: 2019<br>`;
-      // mp3tag.tags.v2.TYER = '2019';
-      // mp3tag.save({
-      //   strict: true,
-      //   id3v2: { padding: 4096 }
-      // });
       if (mp3tag.error !== '') {
         testText.value += `Error saving tags: ${mp3tag.error}<br>`;
-      } else {
-        testText.value += `mp3 file was saved<br>`;
       }
       testText.value += `Please wait...<br>`;
       mp3tag.read();
-      testText.value += `New TAGS: ${mp3tag.tags}<br>`;
-
-      console.log('new buffer', mp3tag.tags);
+      mp3tag.tags.v2.APIC[0].data = ["..."];
+      testText.value += `TAGS: <pre style="text-align: left;background: white;">${JSON.stringify(mp3tag.tags.v2, null, 2)}</pre><br>`;
+      // console.log('new buffer', mp3tag.tags);
     }
   }
 }
@@ -529,9 +546,6 @@ onMounted(async () => {
 <template>
   <div style="display: flex; flex-direction: column;">
     <div class="top-buttons">
-      <div class="top-buttons__button-wrapper">
-        <button @click="testFunction">Test mp3</button>
-      </div>
       <div class="top-buttons__button-wrapper" :style="`${settingsIsVisible ? 'background: white;' : ''}`">
         <img src="../assets/icons/settings.svg"
              v-if="!settingsIsVisible"
@@ -561,6 +575,9 @@ onMounted(async () => {
       </div>
       <div class="top-buttons__button-wrapper">
         <button :disabled="!mp3Files.length" @click="clearAll">Clear All</button>
+      </div>
+      <div class="top-buttons__button-wrapper">
+        <button @click="testFunction">View Tags</button>
       </div>
     </div>
 
@@ -596,8 +613,11 @@ onMounted(async () => {
       Loading...
     </div>
 
-    <div class="report">
-      <div v-if="testText" v-html="testText"></div>
+    <div class="report" style="font-size: 13px;">
+      <div v-if="testText" style="text-align: left;">
+        <img src="../assets/icons/close.svg" style="height: 20px;cursor: pointer" @click="testText = ''"  alt="Close"/>
+      </div>
+      <div v-if="testText" style="text-align: left;" v-html="testText"></div>
       <div v-if="reportData.success" class="text-green">Success: {{reportData.success}}</div>
       <div v-if="reportData.error" class="text-red">Error: {{reportData.error}}</div>
       <div v-if="reportData.unchecked" class="text-black">Unchecked: {{reportData.unchecked}}</div>
