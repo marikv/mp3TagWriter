@@ -243,6 +243,10 @@ async function changeMp3Tags() {
   reportData.value =  { ...report };
 
   for (let i = 0; i < mp3Files.value.length; i++) {
+    mp3Files.value[i].message = null;
+  }
+
+  for (let i = 0; i < mp3Files.value.length; i++) {
     const mp3FilePath = mp3Files.value[i].path;
     let prc = 100 * i / mp3Files.value.length;
     const fileName = getFileNameFromFilePath(mp3FilePath);
@@ -316,25 +320,40 @@ async function changeMp3Tags() {
           mp3Files.value[i].message = mp3tag.error;
           report.error += 1;
         } else {
-          mp3Files.value[i].status = STATUS_SUCCESS;
-          report.success += 1;
+
+          // Write a binary file to the `$APPDATA/avatar.png` path
+          /*
+          await writeBinaryFile({
+            path: fileName.replace('.mp3', '_TAGGED.mp3'),
+            contents: new Uint8Array(arrayBuffer)
+          }, {
+            dir: BaseDirectory.Desktop
+          });
+           */
+          try {
+            const savePath = saveOriginalFile.value ? mp3FilePath.replace('.mp3', '_TAGGED.mp3') : mp3FilePath;
+            await writeBinaryFile(savePath, new Uint8Array(arrayBuffer));
+            mp3Files.value[i].status = STATUS_SUCCESS;
+            report.success += 1;
+          }  catch (error) {
+            try {
+              const savePath = mp3FilePath.replace('.mp3', '_TAGGED.mp3');
+              await writeBinaryFile(savePath, new Uint8Array(arrayBuffer));
+              mp3Files.value[i].status = STATUS_SUCCESS;
+              mp3Files.value[i].message = '** This file was saved with the "_TAGGED" suffix because access was denied to it.';
+              report.success += 1;
+            }  catch (error2) {
+              console.error(error2);
+              mp3Files.value[i].status = STATUS_ERROR;
+              mp3Files.value[i].message = error2;
+              report.error += 1;
+            }
+          }
+
+          // Read the new buffer again
+          // mp3tag.read();
+          // console.log('new buffer TXXX', mp3tag.tags.v2.TXXX);
         }
-
-        // Write a binary file to the `$APPDATA/avatar.png` path
-        /*
-        await writeBinaryFile({
-          path: fileName.replace('.mp3', '_TAGGED.mp3'),
-          contents: new Uint8Array(arrayBuffer)
-        }, {
-          dir: BaseDirectory.Desktop
-        });
-         */
-        const savePath = saveOriginalFile.value ? mp3FilePath.replace('.mp3', '_TAGGED.mp3') : mp3FilePath;
-        await writeBinaryFile(savePath, new Uint8Array(arrayBuffer));
-
-        // Read the new buffer again
-        // mp3tag.read();
-        // console.log('new buffer TXXX', mp3tag.tags.v2.TXXX);
       }
     }
   }
@@ -593,7 +612,7 @@ onMounted(async () => {
         <button :disabled="!mp3Files.length" @click="selectXlsFile">Select xls file</button>
       </div>
       <div class="top-buttons__button-wrapper">
-        <button :disabled="!mp3FilesHavePairs"
+        <button :disabled="!mp3FilesHavePairs || loaderIsVisible"
                 class="mp3-buttons__button_positive"
                 @click="changeMp3Tags">Start</button>
       </div>
