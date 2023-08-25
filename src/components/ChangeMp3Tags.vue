@@ -2,11 +2,7 @@
 import { open } from '@tauri-apps/api/dialog';
 import { audioDir, documentDir } from '@tauri-apps/api/path';
 import { platform } from '@tauri-apps/api/os';
-import { BaseDirectory,
-  readBinaryFile,
-  readDir,
-  writeBinaryFile,
-} from '@tauri-apps/api/fs';
+import { readBinaryFile, readDir, writeBinaryFile } from '@tauri-apps/api/fs';
 import {
   computed,
   onMounted,
@@ -16,7 +12,6 @@ import {
 } from 'vue';
 import { read, utils } from 'xlsx';
 import MP3Tag from 'mp3tag.js';
-// import { ID3Writer } from 'browser-id3-writer';
 
 import Helpers from '../classes/Helpers.js';
 import {
@@ -261,25 +256,6 @@ async function changeMp3Tags() {
       const uint8Array = await readBinaryFile(mp3FilePath);
       const buffer = typedArrayToBuffer(uint8Array);
 
-      /*
-      const writer = new ID3Writer(buffer);
-      writer
-          .setFrame('TIT2', 'Home1111111111111111')
-          // .setFrame('TPE1', ['Eminem', '50 Cent'])
-          // .setFrame('TALB', 'Friday Night Lights')
-          // .setFrame('TYER', 2004)
-          // .setFrame('TRCK', '6/8')
-          // .setFrame('TCON', ['Soundtrack'])
-          // .setFrame('TBPM', 128)
-          // .setFrame('WPAY', 'https://google.com')
-          // .setFrame('TKEY', 'Fbm');
-      writer.addTag();
-      // const taggedSongBuffer = writer.arrayBuffer;
-      const blob = writer.getBlob();
-      // FileSaver.saveAs(blob, mp3FilePath);
-      // FileSaver.save(blob, mp3FilePath);
-      */
-
       const verbose = false;// true // Logs all processes using `console.log`
       const mp3tag = new MP3Tag(buffer, verbose);
 
@@ -287,7 +263,6 @@ async function changeMp3Tags() {
       mp3tag.read({
         id3v1: false // Ignore ID3v1 tags when reading
       });
-      // console.log('old buffer  TXXX', mp3tag.tags.v2.TXXX);
 
       // Handle error if there's any
       if (mp3tag.error !== '') {
@@ -295,7 +270,6 @@ async function changeMp3Tags() {
         mp3Files.value[i].status = STATUS_ERROR;
         report.error += 1;
       } else {
-        // Access ID3v2 Tags
         // Comment Tag. See more ID3v2 tags at id3.org
         const excelRow = mp3Files.value[i].excelRow;
 
@@ -306,7 +280,6 @@ async function changeMp3Tags() {
             text: String(excelData.value[excelRow][ii].trim())
           });
         }
-        // console.log('mp3tag.tags.v2.TXXX', mp3tag.tags.v2.TXXX);
 
         const arrayBuffer = mp3tag.save({
           strict: true, // Strict mode, validates all inputs against the standards. See id3.org
@@ -321,15 +294,6 @@ async function changeMp3Tags() {
           report.error += 1;
         } else {
 
-          // Write a binary file to the `$APPDATA/avatar.png` path
-          /*
-          await writeBinaryFile({
-            path: fileName.replace('.mp3', '_TAGGED.mp3'),
-            contents: new Uint8Array(arrayBuffer)
-          }, {
-            dir: BaseDirectory.Desktop
-          });
-           */
           try {
             const savePath = saveOriginalFile.value ? mp3FilePath.replace('.mp3', '_TAGGED.mp3') : mp3FilePath;
             await writeBinaryFile(savePath, new Uint8Array(arrayBuffer));
@@ -349,10 +313,6 @@ async function changeMp3Tags() {
               report.error += 1;
             }
           }
-
-          // Read the new buffer again
-          // mp3tag.read();
-          // console.log('new buffer TXXX', mp3tag.tags.v2.TXXX);
         }
       }
     }
@@ -502,19 +462,7 @@ function getFileNameFromFilePath(filePath) {
   if (platformName.value === 'win32') {
     DS = '\\';
   }
-
   return filePath.split(DS).pop();
-}
-
-function getDirectoryFromFilePath(filePath) {
-  let DS = '/';
-  if (platformName.value === 'win32') {
-    DS = '\\';
-  }
-
-  let arr = filePath.split(DS);
-  arr.pop();
-  return arr.join(DS);
 }
 
 function selectXlsFileIndexForMp3(excelRowNr) {
@@ -572,7 +520,6 @@ async function testFunction() {
         mp3tag.tags.v2.APIC[0].data = ["..."];
       }
       testText.value += `TAGS: <pre style="text-align: left;background: white;">${JSON.stringify(mp3tag.tags.v2, null, 2)}</pre><br>`;
-      // console.log('new buffer', mp3tag.tags);
     }
   }
 }
