@@ -568,7 +568,9 @@ async function testFunction() {
       }
       testText.value += `Please wait...<br>`;
       mp3tag.read();
-      mp3tag.tags.v2.APIC[0].data = ["..."];
+      if (mp3tag.tags && mp3tag.tags.v2 && mp3tag.tags.v2.APIC && mp3tag.tags.v2.APIC[0]) {
+        mp3tag.tags.v2.APIC[0].data = ["..."];
+      }
       testText.value += `TAGS: <pre style="text-align: left;background: white;">${JSON.stringify(mp3tag.tags.v2, null, 2)}</pre><br>`;
       // console.log('new buffer', mp3tag.tags);
     }
