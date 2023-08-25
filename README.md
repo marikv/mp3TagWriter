@@ -8,5 +8,5 @@ npm run tauri dev
 npm run tauri build
 ```
 
-# For Mac Os
-before build or dev, replace all "Uint8Array.from(xxx)" to "new Uint8Array(xxx)"
+# For MacOS
+before build or dev, replace all "Uint8Array.from(xxx)" to "new Uint8Array(xxx)" in node_modules directory
