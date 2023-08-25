@@ -12,7 +12,6 @@
   "dependencies": {
     "@tauri-apps/api": "^1.4.0",
     "mp3tag.js": "^3.4.0",
-    "pinia": "^2.1.6",
     "vue": "^3.3.4",
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.0/xlsx-0.20.0.tgz"
   },
