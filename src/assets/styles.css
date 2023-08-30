@@ -70,41 +70,21 @@ button {
 }
 button:disabled,
 button[disabled] {
-  background-color: #eaeaea;
-  color: #a6a6a6;
+  background-color: rgba(234, 234, 234, 0.17);
+  color: rgba(166, 166, 166, 0.7);
 }
 button:not(:disabled):hover {
-  border-color: #bebebe;
+  border-color: rgba(190, 190, 190, 0.7);
   box-shadow: 0 3px 3px rgba(0, 0, 0, 0.2);
 }
 button:not(:disabled):active {
-  border-color: #bebebe;
-  background-color: #e8e8e8;
+  border-color: rgba(140, 140, 140, 0.87);
+  box-shadow: 0 3px 3px rgba(0, 0, 0, 0.38);
 }
 
 input,
 button {
   outline: none;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    color: #f6f6f6;
-    background-color: #2f2f2f;
-  }
-
-  a:hover {
-    color: #24c8db;
-  }
-
-  input,
-  button {
-    color: #ffffff;
-    background-color: #383838;
-  }
-  button:active {
-    background-color: #3f3f3f;
-  }
 }
 
 .mp3-buttons__button {
@@ -281,6 +261,134 @@ button {
   font-size: 13px;
   padding: 7px 7px 20px 7px;
 }
+
+.settings-icon {
+  background-image: url("../assets/icons/settings.svg");
+  background-repeat: no-repeat;
+  background-size: contain;
+  width: 22px;
+  max-width: 22px;
+  min-width: 22px;
+  height: 22px;
+  max-height: 22px;
+  min-height: 22px;
+  cursor: pointer;
+  margin: 0 8px 0 3px;
+}
+.settings-icon-close {
+  background-image: url("../assets/icons/close.svg");
+  background-repeat: no-repeat;
+  background-size: contain;
+  width: 22px;
+  max-width: 22px;
+  min-width: 22px;
+  height: 22px;
+  max-height: 22px;
+  min-height: 22px;
+  cursor: pointer;
+  margin: 0 8px 0 3px;
+}
 .settings input[type="number"]{
   width: 50px;
+}
+.settings__checkbox {
+  color: #3b3b3b;
+  font-size: 13px;
+  margin-top: 15px;
+}
+pre {
+  text-align: left;
+  background: white;
+  padding: 7px;
+}
+.mp3-info {
+  background-image: url("../assets/icons/info.svg");
+  background-repeat: no-repeat;
+  background-size: contain;
+  width: 18px;
+  max-width: 18px;
+  min-width: 18px;
+  height: 18px;
+  max-height: 18px;
+  min-height: 18px;
+  cursor: pointer;
+  margin: 0 8px 0 3px;
+}
+.test-text-wrapper {
+  text-align: left;
+  margin: 10px;
+  padding: 10px;
+  border: 1px solid #4f4f4f;
+  border-radius: 5px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color: #f6f6f6;
+    background-color: #2f2f2f;
+  }
+
+  a:hover {
+    color: #24c8db;
+  }
+
+  input,
+  button {
+    color: #ffffff;
+    background-color: #383838;
+  }
+  button:active {
+    background-color: #3f3f3f;
+  }
+
+  .settings {
+    background: #4d4d4d;
+    color: white;
+  }
+  .settings__checkbox {
+    color: #d9d9d9;
+  }
+  .top-buttons__button-close-settings {
+    background: #4d4d4d;
+  }
+  pre {
+    background: #4f4e4e;
+  }
+  .loader-text {
+    color: #c7c7c7 !important;
+  }
+
+  .modal-content {
+    background-color: #595959;
+    border: 1px solid #888;
+  }
+  .modal-close {
+    color: #8f8e8e;
+  }
+  .text-red {
+    color: #ec5b5b;
+  }
+  .text-black {
+    color: #d2d1d1;
+  }
+  .mp3-result_processing {
+    color: #6484e5;
+  }
+  .text-green,
+  .mp3-result_success {
+    color: #5ce57a;
+  }
+  .mp3-result_error {
+    color: #ec5b5b;
+  }
+
+  .mp3-info {
+    background-image: url("../assets/icons/info_white.svg");
+  }
+  .settings-icon {
+    background-image: url("../assets/icons/settings_white.svg");
+  }
+  .settings-icon-close {
+    background-image: url("../assets/icons/close_white.svg");
+  }
 }

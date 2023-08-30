@@ -519,7 +519,7 @@ async function testFunction() {
       if (mp3tag.tags && mp3tag.tags.v2 && mp3tag.tags.v2.APIC && mp3tag.tags.v2.APIC[0]) {
         mp3tag.tags.v2.APIC[0].data = ["..."];
       }
-      testText.value += `TAGS: <pre style="text-align: left;background: white;">${JSON.stringify(mp3tag.tags.v2, null, 2)}</pre><br>`;
+      testText.value += `TAGS: <pre>${JSON.stringify(mp3tag.tags.v2, null, 2)}</pre><br>`;
     }
   }
 }
@@ -538,17 +538,13 @@ onMounted(async () => {
 <template>
   <div style="display: flex; flex-direction: column;">
     <div class="top-buttons">
-      <div class="top-buttons__button-wrapper" :style="`${settingsIsVisible ? 'background: white;' : ''}`">
-        <img src="../assets/icons/settings.svg"
+      <div class="top-buttons__button-wrapper" :class="`${settingsIsVisible ? 'top-buttons__button-close-settings' : ''}`">
+        <div class="settings-icon"
              v-if="!settingsIsVisible"
-             @click="settingsIsVisible = !settingsIsVisible"
-             style="height: 25px;cursor: pointer;"
-             alt=""/>
-        <img src="../assets/icons/close.svg"
+             @click="settingsIsVisible = !settingsIsVisible"></div>
+        <div class="settings-icon-close"
              v-else
-             @click="settingsIsVisible = !settingsIsVisible"
-             style="height: 25px;cursor: pointer;"
-             alt=""/>
+             @click="settingsIsVisible = !settingsIsVisible"></div>
       </div>
       <div class="top-buttons__button-wrapper">
         <button @click="selectFolder">Select folders with mp3 files</button>
@@ -596,7 +592,7 @@ onMounted(async () => {
           <td>Album:</td> <td><input v-model="xlsAlbumColNr" type="number"></td>
         </tr>
       </table>
-      <div style="color: #3b3b3b;font-size: 13px;margin-top: 15px;">
+      <div class="settings__checkbox">
         <label>
           <input type="checkbox" v-model="saveOriginalFile"/>
           Save the original file; the tagged file will be saved with the "_TAGGED" suffix
@@ -612,10 +608,11 @@ onMounted(async () => {
     </div>
 
     <div class="report" style="font-size: 13px;">
-      <div v-if="testText" style="text-align: left;">
-        <img src="../assets/icons/close.svg" style="height: 20px;cursor: pointer" @click="testText = ''"  alt="Close"/>
+      <div v-if="testText" class="test-text-wrapper">
+        <div class="settings-icon-close" style="margin-bottom: 10px"
+             @click="testText = ''"></div>
+        <div v-html="testText"></div>
       </div>
-      <div v-if="testText" style="text-align: left;" v-html="testText"></div>
       <div v-if="reportData.success" class="text-green">Success: {{reportData.success}}</div>
       <div v-if="reportData.error" class="text-red">Error: {{reportData.error}}</div>
       <div v-if="reportData.unchecked" class="text-black">Unchecked: {{reportData.unchecked}}</div>
@@ -644,17 +641,16 @@ onMounted(async () => {
           </div>
           <div>
             <div style="display: flex; align-items: center;">
-              <img src="../assets/icons/info.svg"
-                   v-if="mp3Files[mp3FileIndex].title || mp3Files[mp3FileIndex].album || mp3Files[mp3FileIndex].artist"
-                   @click="mp3Files[mp3FileIndex].info = !mp3Files[mp3FileIndex].info"
-                   style="height: 16px; cursor: pointer; margin: 0 10px 2px 0;"
-                   alt="View Info"/>
+              <div
+                  v-if="mp3Files[mp3FileIndex].title || mp3Files[mp3FileIndex].album || mp3Files[mp3FileIndex].artist"
+                  @click="mp3Files[mp3FileIndex].info = !mp3Files[mp3FileIndex].info"
+                  class="mp3-info"></div>
               {{getFileNameFromFilePath(mp3FileData.path)}}
             </div>
             <div v-if="mp3Files[mp3FileIndex].info" class="mp3-result" style="line-height: 1.1;">
               <div v-if="mp3Files[mp3FileIndex].title">Title: {{mp3Files[mp3FileIndex].title}}</div>
               <div v-if="mp3Files[mp3FileIndex].album">Album: {{mp3Files[mp3FileIndex].album}}</div>
-              <div v-if="mp3Files[mp3FileIndex].artist">Artis: {{mp3Files[mp3FileIndex].artist}}</div>
+              <div v-if="mp3Files[mp3FileIndex].artist">Artist: {{mp3Files[mp3FileIndex].artist}}</div>
             </div>
             <div :class="`mp3-result mp3-result_${mp3FileData.status}`">
               {{mp3FileData.status}} {{mp3FileData.message}}
