@@ -146,6 +146,7 @@ async function beginAutoPairForUnpaired() {
   }
   setLoaderWidth(0, '');
   loaderIsVisible.value = false;
+  await changeMp3Tags();
 }
 
 async function beginAutoPair() {
@@ -198,6 +199,7 @@ async function beginAutoPair() {
               const simpleAlbumXls = Helpers.simpleStr(xlsAlbum);
               const simpleTitleMp3 = Helpers.simpleStr(mp3tag.tags.title);
               const simpleTitleXls = Helpers.simpleStr(xlsTitle);
+
               if ((eqArtist && eqTitle && eqAlbum)
                   ||
                   (eqTitle && eqAlbum && simpleArtistMp3.indexOf(simpleArtistXls) > -1)
@@ -223,6 +225,8 @@ async function beginAutoPair() {
     loaderIsVisible.value = false;
     if (unpairedExists) {
       await beginAutoPairForUnpaired();
+    } else {
+      await changeMp3Tags();
     }
   }
 }

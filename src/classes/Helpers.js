@@ -1,6 +1,9 @@
 export default class Helpers {
 
     static strEqual(str1, str2) {
+        if ((!str1 && str2) || (str1 && !str2)) {
+            return false;
+        }
         let lcStr1 = this.simpleStr(str1);
         if (!lcStr1) {
             lcStr1 = this.toLower(str1);
