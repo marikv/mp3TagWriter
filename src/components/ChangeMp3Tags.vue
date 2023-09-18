@@ -58,21 +58,40 @@ if (!xlsArtistColNrStorage) {
 } else {
   xlsArtistColNrStorage = parseInt(xlsArtistColNrStorage, 10);
 }
+
 let xlsTitleColNrStorage = window.localStorage.getItem('xlsTitleColNr');
 if (!xlsTitleColNrStorage) {
   xlsTitleColNrStorage = 2;
 } else {
   xlsTitleColNrStorage = parseInt(xlsTitleColNrStorage, 10);
 }
+
 let xlsAlbumColNrStorage = window.localStorage.getItem('xlsAlbumColNr');
 if (!xlsAlbumColNrStorage) {
   xlsAlbumColNrStorage = 3;
 } else {
   xlsAlbumColNrStorage = parseInt(xlsAlbumColNrStorage, 10);
 }
+
+let xlsCopyrightsColNrStorage = window.localStorage.getItem('xlsCopyrightsColNr');
+if (!xlsCopyrightsColNrStorage) {
+  xlsCopyrightsColNrStorage = 12;
+} else {
+  xlsCopyrightsColNrStorage = parseInt(xlsCopyrightsColNrStorage, 10);
+}
+
+let xlsReleaseDateColNrStorage = window.localStorage.getItem('xlsReleaseDateColNr');
+if (!xlsReleaseDateColNrStorage) {
+  xlsReleaseDateColNrStorage = 6;
+} else {
+  xlsReleaseDateColNrStorage = parseInt(xlsReleaseDateColNrStorage, 10);
+}
+
 const xlsArtistColNr = ref(xlsArtistColNrStorage);
 const xlsTitleColNr = ref(xlsTitleColNrStorage);
 const xlsAlbumColNr = ref(xlsAlbumColNrStorage);
+const xlsCopyrightsColNr = ref(xlsCopyrightsColNrStorage);
+const xlsReleaseDateColNr = ref(xlsReleaseDateColNrStorage);
 
 watch(xlsArtistColNr, (newVal) => {
   window.localStorage.setItem('xlsArtistColNr', String(newVal));
@@ -82,6 +101,12 @@ watch(xlsTitleColNr, (newVal) => {
 });
 watch(xlsAlbumColNr, (newVal) => {
   window.localStorage.setItem('xlsAlbumColNr', String(newVal));
+});
+watch(xlsCopyrightsColNr, (newVal) => {
+  window.localStorage.setItem('xlsCopyrightsColNr', String(newVal));
+});
+watch(xlsReleaseDateColNr, (newVal) => {
+  window.localStorage.setItem('xlsReleaseDateColNr', String(newVal));
 });
 
 const mp3FilesHavePairs = computed(() => {
@@ -119,6 +144,7 @@ async function beginAutoPairForUnpaired() {
           const xlsArtist = excelData.value[j][xlsArtistColNr.value - 1];
           const xlsTitle = excelData.value[j][xlsTitleColNr.value - 1];
           const xlsAlbum = excelData.value[j][xlsAlbumColNr.value - 1];
+          // const xlsCopyrights = excelData.value[j][xlsCopyrightsColNr.value - 1];
           // const eqArtist = Helpers.strEqual(xlsArtis, mp3Artist);
           // const eqTitle = Helpers.strEqual(xlsTitle, mp3Title);
           const eqAlbum = Helpers.strEqual(xlsAlbum, mp3Album);
@@ -189,14 +215,15 @@ async function beginAutoPair() {
               const xlsArtis = excelData.value[j][xlsArtistColNr.value - 1];
               const xlsTitle = excelData.value[j][xlsTitleColNr.value - 1];
               const xlsAlbum = excelData.value[j][xlsAlbumColNr.value - 1];
+              // const xlsCopyrights = excelData.value[j][xlsCopyrightsColNr.value - 1];
 
               const eqArtist = Helpers.strEqual(xlsArtis, mp3tag.tags.artist);
               const eqTitle = Helpers.strEqual(xlsTitle, mp3tag.tags.title);
               const eqAlbum = Helpers.strEqual(xlsAlbum, mp3tag.tags.album);
               const simpleArtistMp3 = Helpers.simpleStr(mp3tag.tags.artist);
               const simpleArtistXls = Helpers.simpleStr(xlsArtis);
-              const simpleAlbumMp3 = Helpers.simpleStr(mp3tag.tags.album);
-              const simpleAlbumXls = Helpers.simpleStr(xlsAlbum);
+              // const simpleAlbumMp3 = Helpers.simpleStr(mp3tag.tags.album);
+              // const simpleAlbumXls = Helpers.simpleStr(xlsAlbum);
               const simpleTitleMp3 = Helpers.simpleStr(mp3tag.tags.title);
               const simpleTitleXls = Helpers.simpleStr(xlsTitle);
 
@@ -277,6 +304,26 @@ async function changeMp3Tags() {
         // Comment Tag. See more ID3v2 tags at id3.org
         const excelRow = mp3Files.value[i].excelRow;
 
+        // error TYER is not supported in ID3v2.4
+        // that's why I commented rows bellow
+        /*
+        if (!mp3tag.tags.v2.TYER) {
+          console.log('xlsReleaseDateColNr', parseInt(String(xlsReleaseDateColNr.value), 10) - 1);
+          console.log('excelData.value[excelRow]', excelData.value[excelRow]);
+          const releaseDateVal = excelData.value[excelRow][parseInt(String(xlsReleaseDateColNr.value), 10) - 1];
+          if (releaseDateVal) {
+            let year = releaseDateVal.trim();
+            if (year.length > 4) {
+              year = year.slice(0, 4);
+            }
+            mp3tag.tags.v2.TYER = String(year);
+          } else {
+            console.log('releaseDateVal NOT EXIST', releaseDateVal);
+          }
+        }
+        */
+
+        mp3tag.tags.v2.TCOP = excelData.value[excelRow][parseInt(String(xlsCopyrightsColNr.value), 10) - 1].trim();
         mp3tag.tags.v2.TXXX = [];
         for (let ii = 0; ii < excelData.value[excelRow].length; ii += 1) {
           mp3tag.tags.v2.TXXX.push({
@@ -574,7 +621,13 @@ onMounted(async () => {
     </div>
 
     <div v-if="settingsIsVisible" class="settings">
-      <div style="color: #919191;font-size: 12px;">
+      <div class="settings__checkbox">
+        <label>
+          <input type="checkbox" v-model="saveOriginalFile"/>
+          Save the original file; the tagged file will be saved with the "_TAGGED" suffix
+        </label>
+      </div>
+      <div style="color: #919191;font-size: 12px;margin-top: 23px;">
         * The first row of the XLS file must serve as the header;
         It will not be parsed for pairing with songs.
       </div>
@@ -595,13 +648,13 @@ onMounted(async () => {
         <tr>
           <td>Album:</td> <td><input v-model="xlsAlbumColNr" type="number"></td>
         </tr>
+<!--        <tr>-->
+<!--          <td>Release Date:</td> <td><input v-model="xlsReleaseDateColNr" type="number"></td>-->
+<!--        </tr>-->
+        <tr>
+          <td>Copyrights:</td> <td><input v-model="xlsCopyrightsColNr" type="number"></td>
+        </tr>
       </table>
-      <div class="settings__checkbox">
-        <label>
-          <input type="checkbox" v-model="saveOriginalFile"/>
-          Save the original file; the tagged file will be saved with the "_TAGGED" suffix
-        </label>
-      </div>
     </div>
 
     <div class="loader-border" :class="loaderIsVisible ? '' : 'hidden'">
